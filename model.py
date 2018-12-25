@@ -1,6 +1,10 @@
+import math
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import torch.nn.functional as F
+
+LR_RATE = 0.0001
 
 
 class RAS(nn.Module):
@@ -25,7 +29,8 @@ class RAS(nn.Module):
         self.conv3_dsn6 = nn.Conv2d(256, 256, kernel_size=5, padding=2)
         self.conv4_dsn6 = nn.Conv2d(256, 256, kernel_size=5, padding=2)
         self.conv5_dsn6 = nn.Conv2d(256, 1, kernel_size=1)
-        self.conv5_dsn6_up = nn.ConvTranspose2d(1, 1, kernel_size=64, stride=32)
+        self.conv5_dsn6_up = nn.ConvTranspose2d(
+            1, 1, kernel_size=64, stride=32)
 
         self.conv5_dsn6_5 = nn.ConvTranspose2d(1, 1, kernel_size=4, stride=2)
         self.conv1_dsn5 = nn.Conv2d(512, 64, kernel_size=1)
@@ -55,13 +60,15 @@ class RAS(nn.Module):
         self.conv4_dsn2 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
         self.sum_dsn2_up = nn.ConvTranspose2d(1, 1, kernel_size=4, stride=2)
 
-        self.conv1_dsn1 = nn.Conv2d(1, 64, kernel_size=1)
+        self.conv1_dsn1 = nn.Conv2d(64, 64, kernel_size=1)
         self.conv2_dsn1 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv3_dsn1 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv4_dsn1 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
 
+        self.optim = optim.Adam(self.parameters(), lr=LR_RATE)
+        self.apply(RAS.weights_init)
 
-    def forward(self, x):
+    def forward(self, x, ground_truth):
         x_size = x.size()
         x = F.relu(self.conv1_1(x))
         conv1_2 = F.relu(self.conv1_2(x))
@@ -81,71 +88,90 @@ class RAS(nn.Module):
         x = F.relu(self.conv5_2(x))
         conv5_3 = F.relu(self.conv5_3(x))
         x = F.max_pool2d(conv5_3, kernel_size=3, stride=2, padding=1)
-        
+
         x = self.conv1_dsn6(x)
         x = F.relu(self.conv2_dsn6(x))
         x = F.relu(self.conv3_dsn6(x))
         x = F.relu(self.conv4_dsn6(x))
         x = self.conv5_dsn6(x)
         upscore_dsn6 = self.crop(self.conv5_dsn6_up(x), x_size)
-        
+
         x = self.conv5_dsn6_5(x)
         crop1_dsn5 = self.crop(x, conv5_3.size())
-        sigmoid_dsn5 = nn.Sigmoid()
-        x = -1*(sigmoid_dsn5(crop1_dsn5))+1
+        x = -1*(torch.sigmoid(crop1_dsn5))+1
         x = x.expand(-1, 512, -1, -1).mul(conv5_3)
         x = self.conv1_dsn5(x)
         x = F.relu(self.conv2_dsn5(x))
         x = F.relu(self.conv3_dsn5(x))
-        x = self.conv4_dsn5(x).sum(crop1_dsn5)
+        x = self.conv4_dsn5(x) + crop1_dsn5
         upscore_dsn5 = self.crop(self.sum_dsn5_up(x), x_size)
 
         x = self.sum_dsn5_4(x)
         crop1_dsn4 = self.crop(x, conv4_3.size())
-        sigmoid_dsn4 = nn.Sigmoid()
-        x = -1*(sigmoid_dsn4(crop1_dsn4))+1
+        x = -1*(torch.sigmoid(crop1_dsn4))+1
         x = x.expand(-1, 512, -1, -1).mul(conv4_3)
         x = self.conv1_dsn4(x)
         x = F.relu(self.conv2_dsn4(x))
         x = F.relu(self.conv3_dsn4(x))
-        x = self.conv4_dsn4(x).sum(crop1_dsn4)
+        x = self.conv4_dsn4(x) + crop1_dsn4
         upscore_dsn4 = self.crop(self.sum_dsn4_up(x), x_size)
 
         x = self.sum_dsn4_3(x)
         crop1_dsn3 = self.crop(x, conv3_3.size())
-        sigmoid_dsn3 = nn.Sigmoid()
-        x = -1*(sigmoid_dsn3(crop1_dsn3))+1
+        x = -1*(torch.sigmoid(crop1_dsn3))+1
         x = x.expand(-1, 256, -1, -1).mul(conv3_3)
         x = self.conv1_dsn3(x)
         x = F.relu(self.conv2_dsn3(x))
         x = F.relu(self.conv3_dsn3(x))
-        x = self.conv4_dsn3(x).sum(crop1_dsn3)
+        x = self.conv4_dsn3(x) + crop1_dsn3
         upscore_dsn3 = self.crop(self.sum_dsn3_up(x), x_size)
-
 
         x = self.sum_dsn3_2(x)
         crop1_dsn2 = self.crop(x, conv2_2.size())
-        sigmoid_dsn2 = nn.Sigmoid()
-        x = -1*(sigmoid_dsn2(crop1_dsn2))+1
+        x = -1*(torch.sigmoid(crop1_dsn2))+1
         x = x.expand(-1, 128, -1, -1).mul(conv2_2)
         x = self.conv1_dsn2(x)
         x = F.relu(self.conv2_dsn3(x))
         x = F.relu(self.conv2_dsn3(x))
-        x = self.conv4_dsn2(x).sum(crop1_dsn2)
+        x = self.conv4_dsn2(x) + crop1_dsn2
         upscore_dsn2 = self.crop(self.sum_dsn2_up(x), x_size)
 
-        sigmoid_dsn1 = nn.Sigmoid()
-        x = -1*(sigmoid_dsn1(upscore_dsn2))+1
+        x = -1*(torch.sigmoid(upscore_dsn2))+1
         x = x.expand(-1, 64, -1, -1).mul(conv1_2)
         x = self.conv1_dsn1(x)
         x = F.relu(self.conv2_dsn1(x))
         x = F.relu(self.conv3_dsn1(x))
-        x = self.conv4_dsn1(x).sum(upscore_dsn2)
+        x = self.conv4_dsn1(x) + upscore_dsn2
         upscore_dsn1 = self.crop(self.sum_dsn2_up(x), x_size)
 
-        return upscore_dsn1, upscore_dsn2, upscore_dsn3, upscore_dsn4, upscore_dsn5, upscore_dsn6 
+        loss = nn.MSELoss()
+        loss_1 = loss(torch.sigmoid(upscore_dsn1), ground_truth)
+        loss_2 = loss(torch.sigmoid(upscore_dsn2), ground_truth)
+        loss_3 = loss(torch.sigmoid(upscore_dsn3), ground_truth)
+        loss_4 = loss(torch.sigmoid(upscore_dsn4), ground_truth)
+        loss_5 = loss(torch.sigmoid(upscore_dsn5), ground_truth)
+        loss_6 = loss(torch.sigmoid(upscore_dsn6), ground_truth)
+        total_loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
+        return total_loss
+
+    def train(self, batch_x, batch_y):
+        loss = self.forward(batch_x, batch_y)
+        self.optim.zero_grad()
+        loss.backward()
+        self.optim.step()
+        return loss
 
     def crop(self, upsampled, x_size):
         c = (upsampled.size()[2] - x_size[2]) // 2
-        assert(c>0)
-        return upsampled[:, :, c:-c, c:-c]
+        _c = x_size[2] - upsampled.size()[2] + c
+        assert(c >= 0)
+        return upsampled[:, :, c:_c, c:_c]
+
+    @staticmethod
+    def weights_init(m):
+        if isinstance(m, nn.Conv2d):
+            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            m.weight.data.normal_(0, math.sqrt(2. / n))
+        elif isinstance(m, nn.ConvTranspose2d):
+            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            m.weight.data.normal_(0, math.sqrt(2. / n))
