@@ -162,8 +162,9 @@ class RAS(nn.Module):
         return total_loss
 
     def test(self, batch_x):
-        _, _, _, _, _, dsn6 = self.forward(batch_x)
-        return dsn6.detach()
+        dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x)
+        dsn = dsn1.detach()+dsn2.detach()+dsn3.detach()+dsn4.detach()+dsn5.detach()+dsn6.detach()
+        return dsn/6
 
     def crop(self, upsampled, x_size):
         c = (upsampled.size()[2] - x_size[2]) // 2
