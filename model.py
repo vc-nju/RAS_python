@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-LR_RATE = 0.00001
+LR_RATE = 0.0001
 
 
 class RAS(nn.Module):
@@ -68,7 +68,7 @@ class RAS(nn.Module):
         self.optim = optim.Adam(self.parameters(), lr=LR_RATE)
         self.apply(RAS.weights_init)
 
-    def forward(self, x, ground_truth):
+    def forward(self, x):
         x_size = x.size()
         x = F.relu(self.conv1_1(x))
         conv1_2 = F.relu(self.conv1_2(x))
@@ -144,22 +144,26 @@ class RAS(nn.Module):
         x = self.conv4_dsn1(x) + upscore_dsn2
         upscore_dsn1 = self.crop(self.sum_dsn2_up(x), x_size)
 
-        loss = nn.MSELoss()
-        loss_1 = loss(torch.sigmoid(upscore_dsn1), ground_truth)
-        loss_2 = loss(torch.sigmoid(upscore_dsn2), ground_truth)
-        loss_3 = loss(torch.sigmoid(upscore_dsn3), ground_truth)
-        loss_4 = loss(torch.sigmoid(upscore_dsn4), ground_truth)
-        loss_5 = loss(torch.sigmoid(upscore_dsn5), ground_truth)
-        loss_6 = loss(torch.sigmoid(upscore_dsn6), ground_truth)
-        total_loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
-        return total_loss
+        return torch.sigmoid(upscore_dsn1), torch.sigmoid(upscore_dsn2), torch.sigmoid(upscore_dsn3), torch.sigmoid(upscore_dsn4), torch.sigmoid(upscore_dsn5), torch.sigmoid(upscore_dsn6)
 
     def train(self, batch_x, batch_y):
-        loss = self.forward(batch_x, batch_y)
+        dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x)
+        loss = nn.MSELoss()
+        loss_1 = loss(dsn1, batch_y)
+        loss_2 = loss(dsn2, batch_y)
+        loss_3 = loss(dsn3, batch_y)
+        loss_4 = loss(dsn4, batch_y)
+        loss_5 = loss(dsn5, batch_y)
+        loss_6 = loss(dsn6, batch_y)
+        total_loss = loss_1 + loss_2 + loss_3 + loss_4 + loss_5 + loss_6
         self.optim.zero_grad()
-        loss.backward()
+        total_loss.backward()
         self.optim.step()
-        return loss
+        return total_loss
+
+    def test(self, batch_x):
+        _, _, _, _, _, dsn6 = self.forward(batch_x)
+        return dsn6.detach()
 
     def crop(self, upsampled, x_size):
         c = (upsampled.size()[2] - x_size[2]) // 2
