@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-LR_RATE = 0.0001
+LR_RATE = 0.00001
 
 
 class RAS(nn.Module):

@@ -6,8 +6,8 @@ import torch.utils.data as Data
 from model import RAS
 
 IMAGES_NUM = 3372
-MINI_IMAGES_NUM = 300
-BATCH_SIZE = 12
+MINI_IMAGES_NUM = 1120
+BATCH_SIZE = 1
 EPOCHS_NUM = 200
 LR_RATE = 0.0001
 
@@ -30,7 +30,7 @@ def trans_gt(path):
 def get_train_data(start_image_id, end_image_id):
     image_num = end_image_id - start_image_id
     x = np.zeros([image_num, 3, 500, 500])
-    y = np.zeros([image_num, 3, 500, 500])
+    y = np.zeros([image_num, 1, 500, 500])
     for i in range(image_num):
         im_path = "data/train/{}.jpg".format(i+start_image_id)
         gt_path = "data/train/{}.png".format(i+start_image_id)
@@ -50,8 +50,9 @@ def get_train_data(start_image_id, end_image_id):
 if __name__ == "__main__":
     ras = RAS()
     ras.cuda()
+    ras.load_state_dict(torch.load("data/model/epoch_99_params.pkl"))
     
-    for epoch in range(EPOCHS_NUM):
+    for epoch in range(99, EPOCHS_NUM):
         loader_num = IMAGES_NUM//MINI_IMAGES_NUM
         for l in range(loader_num):
             start_image_id = MINI_IMAGES_NUM * l
@@ -59,7 +60,10 @@ if __name__ == "__main__":
             loader = get_train_data(start_image_id, end_image_id)
             for step, (batch_x, batch_y) in enumerate(loader):
                 loss = ras.train(batch_x.cuda(), batch_y.cuda())
-                if step%20 == 0:
-                    print("epoch = {}, step = {}, loss = {}".format(epoch, step, loss))
+                _step = step + start_image_id  
+                if _step%20 == 0:
+                    print("epoch = {}, step = {}, loss = {}".format(epoch, _step, loss))
+                if _step%100 == 0:
+                    torch.save(ras.state_dict(), 'data/model/params.pkl')
             del(loader)
-        torch.save(ras.state_dict(), 'data/model/params.pkl')
+        torch.save(ras.state_dict(), 'data/model/epoch_{}_params.pkl'.format(epoch))
