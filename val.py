@@ -47,3 +47,4 @@ if __name__ == "__main__":
         if step%20==0:
             print("finished step {}".format(step))
     auc = metrics.roc_auc_score(np.array(Y_test).flatten(), np.array(Y_prob).flatten())
+    print(auc)
