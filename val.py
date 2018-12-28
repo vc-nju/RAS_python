@@ -61,7 +61,7 @@ if __name__ == "__main__":
     for i in range(IMAGES_NUM):
         y = cv2.imread("data/visualization/{}.png".format(i))
         gt = cv2.imread("data/val/{}.png".format(i))
-        im = cv2.resize(y, (gt.shape[1], gt.shape[0]), interpolation=cv2.INTER_AREA)
+        y = cv2.resize(y, (gt.shape[1], gt.shape[0]), interpolation=cv2.INTER_AREA)
         y = y[:,:,0]
         gt = gt[:,:,0]
         y_t = np.sum(y>255./2)
