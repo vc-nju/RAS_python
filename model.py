@@ -149,6 +149,7 @@ class RAS(nn.Module):
         x = F.relu(self.conv3_dsn1(x))
         conv4_dsn1 = self.conv4_dsn1(x)
         x = conv4_dsn1 + upscore_dsn2
+        print(x.shape)
         upscore_dsn1 = self.crop(x, x_size)
 
         def get_im(layer): return layer.clone().detach().cpu().numpy()[0]
