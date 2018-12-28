@@ -154,7 +154,7 @@ class RAS(nn.Module):
         def get_im(layer): return layer.clone().detach().cpu().numpy()[0]
 
         def save_im(path, im): return cv2.imwrite(
-            path, np.mean(im, axis=0).transpos((1, 2, 0)))
+            path, np.mean(im, axis=0).transpose((1, 2, 0)))
         if im_path_pre:
             layers = [conv1_2, conv2_2, conv3_3, conv4_3, conv5_3, conv5_dsn6,
                       conv4_dsn5, conv4_dsn4, conv4_dsn3, conv4_dsn2, conv4_dsn1]
