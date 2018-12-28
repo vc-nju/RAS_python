@@ -117,7 +117,7 @@ class RAS(nn.Module):
         x = F.relu(self.conv2_dsn4(x))
         x = F.relu(self.conv3_dsn4(x))
         conv4_dsn4 = self.conv4_dsn4(x)
-        x = self.conv4_dsn4(x) + crop1_dsn4
+        x = conv4_dsn4 + crop1_dsn4
         upscore_dsn4 = self.crop(self.sum_dsn4_up(x), x_size)
 
         x = self.sum_dsn4_3(x)
