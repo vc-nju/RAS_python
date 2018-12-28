@@ -1,4 +1,6 @@
+import cv2
 import math
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -68,7 +70,7 @@ class RAS(nn.Module):
         self.optim = optim.Adam(self.parameters(), lr=LR_RATE)
         self.apply(RAS.weights_init)
 
-    def forward(self, x):
+    def forward(self, x, im_path_pre=None):
         x_size = x.size()
         x = F.relu(self.conv1_1(x))
         conv1_2 = F.relu(self.conv1_2(x))
@@ -93,8 +95,8 @@ class RAS(nn.Module):
         x = F.relu(self.conv2_dsn6(x))
         x = F.relu(self.conv3_dsn6(x))
         x = F.relu(self.conv4_dsn6(x))
-        x = self.conv5_dsn6(x)
-        upscore_dsn6 = self.crop(self.conv5_dsn6_up(x), x_size)
+        conv5_dsn6 = self.conv5_dsn6(x)
+        upscore_dsn6 = self.crop(self.conv5_dsn6_up(conv5_dsn6), x_size)
 
         x = self.conv5_dsn6_5(x)
         crop1_dsn5 = self.crop(x, conv5_3.size())
@@ -103,7 +105,8 @@ class RAS(nn.Module):
         x = self.conv1_dsn5(x)
         x = F.relu(self.conv2_dsn5(x))
         x = F.relu(self.conv3_dsn5(x))
-        x = self.conv4_dsn5(x) + crop1_dsn5
+        conv4_dsn5 = self.conv4_dsn5(x)
+        x = conv4_dsn5 + crop1_dsn5
         upscore_dsn5 = self.crop(self.sum_dsn5_up(x), x_size)
 
         x = self.sum_dsn5_4(x)
@@ -113,6 +116,7 @@ class RAS(nn.Module):
         x = self.conv1_dsn4(x)
         x = F.relu(self.conv2_dsn4(x))
         x = F.relu(self.conv3_dsn4(x))
+        conv4_dsn4 = self.conv4_dsn4(x)
         x = self.conv4_dsn4(x) + crop1_dsn4
         upscore_dsn4 = self.crop(self.sum_dsn4_up(x), x_size)
 
@@ -123,7 +127,8 @@ class RAS(nn.Module):
         x = self.conv1_dsn3(x)
         x = F.relu(self.conv2_dsn3(x))
         x = F.relu(self.conv3_dsn3(x))
-        x = self.conv4_dsn3(x) + crop1_dsn3
+        conv4_dsn3 = self.conv4_dsn3(x)
+        x = conv4_dsn3 + crop1_dsn3
         upscore_dsn3 = self.crop(self.sum_dsn3_up(x), x_size)
 
         x = self.sum_dsn3_2(x)
@@ -133,7 +138,8 @@ class RAS(nn.Module):
         x = self.conv1_dsn2(x)
         x = F.relu(self.conv2_dsn3(x))
         x = F.relu(self.conv2_dsn3(x))
-        x = self.conv4_dsn2(x) + crop1_dsn2
+        conv4_dsn2 = self.conv4_dsn2(x)
+        x = conv4_dsn2 + crop1_dsn2
         upscore_dsn2 = self.crop(self.sum_dsn2_up(x), x_size)
 
         x = -1*(torch.sigmoid(upscore_dsn2))+1
@@ -141,8 +147,22 @@ class RAS(nn.Module):
         x = self.conv1_dsn1(x)
         x = F.relu(self.conv2_dsn1(x))
         x = F.relu(self.conv3_dsn1(x))
-        x = self.conv4_dsn1(x) + upscore_dsn2
-        upscore_dsn1 = self.crop(self.sum_dsn2_up(x), x_size)
+        conv4_dsn1 = self.conv4_dsn1(x)
+        x = conv4_dsn1 + upscore_dsn2
+        upscore_dsn1 = self.crop(x, x_size)
+
+        def get_im(layer): return layer.clone().detach().cpu().numpy()[0]
+
+        def save_im(path, im): return cv2.imwrite(
+            path, np.mean(im, axis=0).transpos((1, 2, 0)))
+        if im_path_pre:
+            layers = [conv1_2, conv2_2, conv3_3, conv4_3, conv5_3, conv5_dsn6,
+                      conv4_dsn5, conv4_dsn4, conv4_dsn3, conv4_dsn2, conv4_dsn1]
+            im_paths = ["conv1_2", "conv2_2", "conv3_3", "conv4_3", "conv5_3", "conv5_dsn6",
+                        "conv4_dsn5", "conv4_dsn4", "conv4_dsn3", "conv4_dsn2", "conv4_dsn1"]
+            for l, i in zip(layers, im_paths):
+                im = get_im(l)
+                save_im(im_path_pre+i, im)
 
         return torch.sigmoid(upscore_dsn1), torch.sigmoid(upscore_dsn2), torch.sigmoid(upscore_dsn3), torch.sigmoid(upscore_dsn4), torch.sigmoid(upscore_dsn5), torch.sigmoid(upscore_dsn6)
 
@@ -161,9 +181,12 @@ class RAS(nn.Module):
         self.optim.step()
         return total_loss
 
-    def test(self, batch_x):
-        dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x)
-        dsn = dsn1.detach()+dsn2.detach()+dsn3.detach()+dsn4.detach()+dsn5.detach()+dsn6.detach()
+    def test(self, batch_x, im_path_pre=None):
+        if im_path_pre:
+            assert(batch_x.size()[0]==1)
+        dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x, im_path_pre)
+        dsn = dsn1.detach()+dsn2.detach()+dsn3.detach() + \
+            dsn4.detach()+dsn5.detach()+dsn6.detach()
         return dsn/6
 
     def crop(self, upsampled, x_size):
