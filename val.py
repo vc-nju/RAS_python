@@ -56,3 +56,13 @@ if __name__ == "__main__":
     auc = metrics.roc_auc_score(
         np.array(Y_test).flatten(), np.array(Y_prob).flatten())
     print("auc is {}".format(auc))
+
+    MIOU = 0.
+    for i in range(IMAGES_NUM):
+        y = cv2.imread("data/visualization/{}.png".format(i))[:,:,0]
+        gt = cv2.imread("data/val/{}.png".format(i))[:,:,0]
+        y_t = np.sum(y>255./2)
+        g_t = np.sum(gt>255./2)
+        tp = np.sum(gt[y>255./2] > 255./2)
+        MIOU += tp/(y_t + g_t - tp)
+    print("MIOU is {}".format(MIOU/IMAGES_NUM))
