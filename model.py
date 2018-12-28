@@ -186,6 +186,10 @@ class RAS(nn.Module):
         if im_path_pre:
             assert(batch_x.size()[0] == 1)
         dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x, im_path_pre)
+        print(dsn1.size())
+        print(dsn4.size())
+        print(dsn5.size())
+        print(dsn6.size())
         dsn = dsn1.detach()+dsn2.detach()+dsn3.detach() + \
             dsn4.detach()+dsn5.detach()+dsn6.detach()
         return dsn/6
