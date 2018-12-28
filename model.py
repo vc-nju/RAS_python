@@ -163,7 +163,7 @@ class RAS(nn.Module):
                         "conv4_dsn5", "conv4_dsn4", "conv4_dsn3", "conv4_dsn2", "conv4_dsn1"]
             for l, i in zip(layers, im_paths):
                 im = get_im(l)
-                save_im(im_path_pre+i, im)
+                save_im(im_path_pre+i+".png", im)
 
         return torch.sigmoid(upscore_dsn1), torch.sigmoid(upscore_dsn2), torch.sigmoid(upscore_dsn3), torch.sigmoid(upscore_dsn4), torch.sigmoid(upscore_dsn5), torch.sigmoid(upscore_dsn6)
 
