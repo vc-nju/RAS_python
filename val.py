@@ -44,12 +44,13 @@ if __name__ == "__main__":
     Y_prob = []
     loader = get_val_data(0, IMAGES_NUM)
     for step, (batch_x, batch_y, im_id) in enumerate(loader):
-        im_path_pre = "data/visualization/{}".format(int(im_id.numpy()[0,0]))
+        im_path_pre = "data/visualization/{}".format(int(im_id.numpy()[0, 0]))
         batch_y_prob = ras.test(batch_x.cuda(), im_path_pre)
         Y_test.append(batch_y.numpy().flatten().astype(np.int32))
         Y_prob.append(batch_y_prob.cpu().numpy().flatten())
-        im_path = "data/visualization/{}.png".format(int(im_id.numpy()[0,0]))
-        cv2.imwrite(im_path, Y_prob[-1].reshape(500, 500, 1))
+        im_path = "data/visualization/{}.png".format(int(im_id.numpy()[0, 0]))
+        im = Y_prob[-1].reshape(500, 500, 1)*255
+        cv2.imwrite(im_path, im.astype(np.uint8))
         if step % 20 == 0:
             print("finished step {}".format(step))
     auc = metrics.roc_auc_score(

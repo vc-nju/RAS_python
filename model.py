@@ -151,10 +151,10 @@ class RAS(nn.Module):
         x = conv4_dsn1 + upscore_dsn2
         upscore_dsn1 = self.crop(x, x_size)
 
-        def get_im(layer): return layer.clone().detach().cpu().numpy()[0]
+        def get_im(layer): return layer.clone().detach().cpu().numpy()[0]*255.
 
         def save_im(path, im): return cv2.imwrite(path, np.mean(
-            im, axis=0).reshape(im.shape[1], im.shape[2], 1))
+            im, axis=0).reshape(im.shape[1], im.shape[2], 1).astype(np.uint8))
 
         if im_path_pre:
             layers = [conv1_2, conv2_2, conv3_3, conv4_3, conv5_3, conv5_dsn6,
