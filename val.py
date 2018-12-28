@@ -49,7 +49,7 @@ if __name__ == "__main__":
         Y_test.append(batch_y.numpy().flatten().astype(np.int32))
         Y_prob.append(batch_y_prob.cpu().numpy().flatten())
         im_path = "data/visualization/{}.png".format(im_id.numpy()[0])
-        cv2.imwrite(im_path, Y_prob[-1].reshape[500, 500, 1])
+        cv2.imwrite(im_path, Y_prob[-1].reshape(500, 500, 1))
         if step % 20 == 0:
             print("finished step {}".format(step))
     auc = metrics.roc_auc_score(
