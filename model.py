@@ -98,7 +98,7 @@ class RAS(nn.Module):
         conv5_dsn6 = self.conv5_dsn6(x)
         upscore_dsn6 = self.crop(self.conv5_dsn6_up(conv5_dsn6), x_size)
 
-        x = self.conv5_dsn6_5(x)
+        x = self.conv5_dsn6_5(conv5_dsn6)
         crop1_dsn5 = self.crop(x, conv5_3.size())
         x = -1*(torch.sigmoid(crop1_dsn5))+1
         x = x.expand(-1, 512, -1, -1).mul(conv5_3)
