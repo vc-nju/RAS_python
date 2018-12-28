@@ -59,8 +59,11 @@ if __name__ == "__main__":
 
     MIOU = 0.
     for i in range(IMAGES_NUM):
-        y = cv2.imread("data/visualization/{}.png".format(i))[:,:,0]
-        gt = cv2.imread("data/val/{}.png".format(i))[:,:,0]
+        y = cv2.imread("data/visualization/{}.png".format(i))
+        gt = cv2.imread("data/val/{}.png".format(i))
+        im = cv2.resize(y, (gt.shape[1], gt.shape[0]), interpolation=cv2.INTER_AREA)
+        y = y[:,:,0]
+        gt = gt[:,:,0]
         y_t = np.sum(y>255./2)
         g_t = np.sum(gt>255./2)
         tp = np.sum(gt[y>255./2] > 255./2)
