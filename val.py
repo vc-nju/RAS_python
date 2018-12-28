@@ -21,6 +21,7 @@ def get_val_data(start_image_id, end_image_id):
         gt_path = "data/val/{}.png".format(i+start_image_id)
         x[i, :, :, :] = trans_im(im_path)
         y[i, :, :, :] = trans_gt(gt_path)
+        im_ids[i] = i+start_image_id
     x = torch.FloatTensor(x)
     y = torch.FloatTensor(y)
     im_ids = torch.Tensor(im_ids)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     Y_prob = []
     loader = get_val_data(0, IMAGES_NUM)
     for step, (batch_x, batch_y, im_id) in enumerate(loader):
-        im_path_pre = "data/visualization/{}".format(str(im_id))
+        im_path_pre = "data/visualization/{}".format(str(im_id[0]))
         batch_y_prob = ras.test(batch_x.cuda(), im_path_pre)
         Y_test.append(batch_y.numpy().flatten().astype(np.int32))
         Y_prob.append(batch_y_prob.cpu().numpy().flatten())
