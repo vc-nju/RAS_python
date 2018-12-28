@@ -150,7 +150,6 @@ class RAS(nn.Module):
         conv4_dsn1 = self.conv4_dsn1(x)
         x = conv4_dsn1 + upscore_dsn2
         upscore_dsn1 = self.crop(x, x_size)
-        print(upscore_dsn1.shape)
 
         def get_im(layer): return layer.clone().detach().cpu().numpy()[0]
 
@@ -187,10 +186,6 @@ class RAS(nn.Module):
         if im_path_pre:
             assert(batch_x.size()[0] == 1)
         dsn1, dsn2, dsn3, dsn4, dsn5, dsn6 = self.forward(batch_x, im_path_pre)
-        print(dsn1.size())
-        print(dsn2.size())
-        print(dsn3.size())
-        print(dsn4.size())
         dsn = dsn1.detach()+dsn2.detach()+dsn3.detach() + \
             dsn4.detach()+dsn5.detach()+dsn6.detach()
         return dsn/6
@@ -199,6 +194,8 @@ class RAS(nn.Module):
         c = (upsampled.size()[2] - x_size[2]) // 2
         _c = x_size[2] - upsampled.size()[2] + c
         assert(c >= 0)
+        if(c == _c == 0):
+            return upsampled
         return upsampled[:, :, c:_c, c:_c]
 
     @staticmethod
