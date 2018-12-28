@@ -151,7 +151,7 @@ class RAS(nn.Module):
         x = conv4_dsn1 + upscore_dsn2
         upscore_dsn1 = self.crop(x, x_size)
 
-        def get_im(layer): return layer.clone().detach().cpu().numpy()[0]*255.
+        def get_im(layer): return torch.sigmoid(layer.clone()).detach().cpu().numpy()[0]*255.
 
         def save_im(path, im): return cv2.imwrite(path, np.mean(
             im, axis=0).reshape(im.shape[1], im.shape[2], 1).astype(np.uint8))
