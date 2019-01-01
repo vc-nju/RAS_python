@@ -4,7 +4,7 @@ import torch
 from sklearn import metrics
 
 from model import RAS
-from utils import trans_im
+from utils import trans_im, crop_and_flatten
 
 TEST_ID = 914
 
@@ -22,7 +22,8 @@ if __name__ == "__main__":
     y_prob = ras.test(torch.FloatTensor(x).cuda())
     y_prob = y_prob.cpu().numpy()[0, 0, :, :]
     y_prob = cv2.resize(y_prob, (im_shape[1], im_shape[0]), interpolation=cv2.INTER_AREA)
-    auc = metrics.roc_auc_score(gt.flatten(), y_prob.flatten())
+    gt_flatten, y_flatten = crop_and_flatten(gt, y_prob)
+    auc = metrics.roc_auc_score(gt_flatten, y_flatten)
     
     img = np.zeros([im_shape[0], im_shape[1]*3, 3])
     img[:, :im_shape[1], :] = cv2.imread(im_path).astype(np.float)/255.

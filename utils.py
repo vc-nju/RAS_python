@@ -18,3 +18,25 @@ def trans_gt(path):
     x = np.zeros([1, 1, 500, 500])
     x[0, 0, :, :] = im[:, :, 0]
     return x
+
+
+def crop_and_flatten(gt, y):
+    _gt = (gt==1.)
+    up = down = left = right = 0
+    for i in range(_gt.shape[0]):
+        if np.sum(_gt[i]) > 0:
+            up = i
+            break
+    for i in range(_gt.shape[0]):
+        if np.sum(_gt[-i]) > 0:
+            down = -i
+            break
+    for i in range(_gt.shape[1]):
+        if np.sum(_gt[:,i]) > 0:
+            left = i
+            break
+    for i in range(_gt.shape[1]):
+        if np.sum(_gt[:,-i]) > 0:
+            right = -i
+            break
+    return gt[up:down, left:right].flatten(), y[up:down, left:right].flatten()

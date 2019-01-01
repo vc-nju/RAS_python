@@ -7,7 +7,7 @@ from sklearn import metrics
 from model import RAS
 from utils import trans_im, trans_gt
 
-IMAGES_NUM = 480
+IMAGES_NUM = 1
 BATCH_SIZE = 1
 
 
