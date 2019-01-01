@@ -24,7 +24,7 @@ We have trained and tested on MSRA-B, and it's auc is 0.976.
 git clone https://github.com/vc-nju/RAS_python.git && cd RAS_python
 mkdir data && mkdir data/model && mkdir data/visualization
 ```
-The pre_train models can be downloaded from [Google Drive]() and [BaiduYun](). Please copy them to data/model/
+The pre_train models can be downloaded from [Google Drive](https://drive.google.com/file/d/1yurCb0Im2DEYwNpLAPloY1nlBWSb5nyW/view?usp=drivesdk) and [BaiduYun](https://pan.baidu.com/s/1dpXedLcdQqZX8nFCTDiIHQ)(passcode: gnrg). Please copy them to data/model/
 
 # Test Zoo
 
